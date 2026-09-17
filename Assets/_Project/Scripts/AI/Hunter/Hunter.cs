@@ -13,7 +13,21 @@ public class Hunter : Agent
     [SerializeField] private Transform _waypointA;
     [SerializeField] private Transform _waypointB;
     [SerializeField] private HunterPerception _perception;
+
+    [SerializeField] private float _TBA = 3f;
+    [SerializeField] private float _rangeAttackRadius = 8f;
+    [SerializeField] private float _meleeAttackRadius = 2f;
     public float MaxSpeed => _maxSpeed;
+    public float TBA => _TBA;
+    public float RangeAttackRadius => _rangeAttackRadius;
+    public float MeleeAttackRadius => _meleeAttackRadius;
+    private Boid _target;
+    public Boid Target => _target;
+
+    public void SetTarget(Boid target)
+    {
+        _target = target;
+    }
 
     public void SetVelocity(Vector3 velocity)
     {

@@ -41,6 +41,7 @@ public class HunterPatrolState : HunterState
 
         if (detectedBoid != null)
         {
+            _hunter.SetTarget(detectedBoid);
             _stateMachine.ChangeState(HunterStateType.Attack);
         }
     }
