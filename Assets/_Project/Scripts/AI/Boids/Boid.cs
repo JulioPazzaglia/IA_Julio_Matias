@@ -2,10 +2,15 @@ using UnityEngine;
 
 public class Boid : Agent
 {
-    [SerializeField] private float _maxSpeed = 3f;
-    [SerializeField] private float _maxSteering = 3f;
+    [SerializeField] private float _maxSpeed = 5f;
+    [SerializeField] private float _maxSteering = 10f;
     [SerializeField] private float _separationRadius = 2f;
     [SerializeField] private BoidPerception _perception;
+    [SerializeField] private float _maxLife = 100f;
+    [SerializeField] private float _respawnDelay = 3f;
+
+    private float _life;
+    public bool IsAlive => _life > 0f;
 
     private BoidStateMachine _stateMachine;
 
@@ -15,11 +20,14 @@ public class Boid : Agent
     private void Awake()
     {
         _stateMachine = new BoidStateMachine(this);
+
         Vector3 randomDirection = new Vector3(
             Random.Range(-1f, 1f),
             0f,
             Random.Range(-1f, 1f)
         );
+
+        _life = _maxLife;
 
         _velocity = randomDirection.normalized * _maxSpeed;
     }
@@ -29,6 +37,9 @@ public class Boid : Agent
         _stateMachine.Update();
 
         transform.position += _velocity * Time.deltaTime;
+
+        transform.position =
+            Bounds.Instance.OutOfBounds(transform.position);
 
         if (_velocity != Vector3.zero)
             transform.forward = _velocity;
@@ -68,7 +79,9 @@ public class Boid : Agent
 
             if (_perception.InRange(agent.transform.position))
             {
-                desired += transform.position - agent.transform.position;
+                desired +=
+                    transform.position - agent.transform.position;
+
                 count++;
             }
         }
@@ -142,11 +155,15 @@ public class Boid : Agent
 
         center /= count;
 
-        Vector3 direction = center - transform.position;
-        Vector3 desired = direction.normalized * _maxSpeed;
+        Vector3 direction =
+            center - transform.position;
+
+        Vector3 desired =
+            direction.normalized * _maxSpeed;
 
         return desired - _velocity;
     }
+
     public void SetSteering(Vector3 steering)
     {
         ApplySteering(steering);
@@ -154,6 +171,78 @@ public class Boid : Agent
 
     public Vector3 CalculateFlocking()
     {
-        return Separation() + Alignment() + Cohesion();
+        return Separation() * 9f
+             + Alignment() * 15f
+             + Cohesion() * 5f;
+    }
+
+    public void TakeDamage(float damage)
+    {
+        _life -= damage;
+
+        Debug.Log(
+            "[BOID] " + gameObject.name +
+            " recibió " + damage +
+            " de daño. Vida: " + _life
+        );
+
+        if (_life <= 0f)
+        {
+            _life = 0f;
+
+            Debug.Log(
+                "[BOID] " + gameObject.name +
+                " murió."
+            );
+
+            _stateMachine.ChangeState(
+                BoidStateType.Hunted
+            );
+        }
+    }
+
+    public void SetVelocity(Vector3 velocity)
+    {
+        _velocity = velocity;
+    }
+
+    public void StartRespawn()
+    {
+        gameObject.SetActive(false);
+
+        Invoke(
+            nameof(Respawn),
+            _respawnDelay
+        );
+    }
+
+    private void Respawn()
+    {
+        _life = _maxLife;
+
+        transform.position =
+            Bounds.Instance.RandomPosition();
+
+        Vector3 randomDirection = new Vector3(
+    Random.Range(-1f, 1f),
+    0f,
+    Random.Range(-1f, 1f)
+);
+
+        _velocity = randomDirection.normalized * _maxSpeed;
+
+        _velocity =
+            randomDirection.normalized * _maxSpeed;
+
+        gameObject.SetActive(true);
+
+        _stateMachine.ChangeState(
+            BoidStateType.Flocking
+        );
+
+        Debug.Log(
+            "[BOID] " + gameObject.name +
+            " reapareció."
+        );
     }
 }

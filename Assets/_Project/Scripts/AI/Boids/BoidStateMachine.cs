@@ -21,12 +21,22 @@ public class BoidStateMachine
             new EvadingState(_boid, _stateMachine)
         );
 
+        _stateMachine.RegisterState(
+            BoidStateType.Hunted,
+            new HuntedState(_boid)
+        );
+
         _stateMachine.ChangeState(BoidStateType.Flocking);
     }
 
     public void Update()
     {
         _stateMachine.Update();
+    }
+
+    public void ChangeState(BoidStateType state)
+    {
+        _stateMachine.ChangeState(state);
     }
 
     private class FlockingState : State
@@ -48,11 +58,16 @@ public class BoidStateMachine
 
             if (hunter != null)
             {
-                _stateMachine.ChangeState(BoidStateType.Evading);
+                _stateMachine.ChangeState(
+                    BoidStateType.Evading
+                );
+
                 return;
             }
 
-            _boid.SetSteering(_boid.CalculateFlocking());
+            _boid.SetSteering(
+                _boid.CalculateFlocking()
+            );
         }
     }
 
@@ -75,7 +90,10 @@ public class BoidStateMachine
 
             if (hunter == null)
             {
-                _stateMachine.ChangeState(BoidStateType.Flocking);
+                _stateMachine.ChangeState(
+                    BoidStateType.Flocking
+                );
+
                 return;
             }
 
@@ -86,6 +104,21 @@ public class BoidStateMachine
             );
 
             _boid.SetSteering(steering);
+        }
+    }
+
+    private class HuntedState : State
+    {
+        private Boid _boid;
+
+        public HuntedState(Boid boid)
+        {
+            _boid = boid;
+        }
+
+        public override void Update()
+        {
+            _boid.SetVelocity(Vector3.zero);
         }
     }
 }
