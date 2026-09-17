@@ -21,8 +21,10 @@ public class Hunter : Agent
     private Boid _target;
 
     public float MaxSpeed => _maxSpeed;
+
     public Transform WaypointA => _waypointA;
     public Transform WaypointB => _waypointB;
+
     public HunterPerception Perception => _perception;
 
     public float RangeAttackRadius => _rangeAttackRadius;
@@ -74,6 +76,7 @@ public class Hunter : Agent
     public void MeleeAttack()
     {
         _velocity = Vector3.zero;
+
         ResetTBA();
 
         // Daño melee al Boid
@@ -82,6 +85,7 @@ public class Hunter : Agent
     public void RangedAttack()
     {
         _velocity = Vector3.zero;
+
         ResetTBA();
 
         // Daño ranged al Boid
