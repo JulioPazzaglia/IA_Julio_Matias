@@ -4,11 +4,17 @@ public class Boid : Agent
 {
     [SerializeField] private float _maxSpeed = 3f;
     [SerializeField] private float _maxSteering = 3f;
-    [SerializeField] private float _slowingDistance = 3f;
-    [SerializeField] private Transform _target;
+    [SerializeField] private float _separationRadius = 2f;
     [SerializeField] private BoidPerception _perception;
+
+    private BoidStateMachine _stateMachine;
+
+    public float MaxSpeed => _maxSpeed;
+    public BoidPerception Perception => _perception;
+
     private void Awake()
     {
+        _stateMachine = new BoidStateMachine(this);
         Vector3 randomDirection = new Vector3(
             Random.Range(-1f, 1f),
             0f,
@@ -17,24 +23,10 @@ public class Boid : Agent
 
         _velocity = randomDirection.normalized * _maxSpeed;
     }
+
     private void Update()
     {
-        //Vector3 steering = Alignment();
-        //Vector3 steering = Separation();
-        Vector3 steering = Separation() + Alignment() + Cohesion();
-        //Vector3 steering = Evade();
-        //Vector3 steering = Pursuit();
-        //Vector3 steering = Flee();
-        //Vector3 steering = Arrive();
-        //Vector3 steering = Seek();
-
-        steering = Vector3.ClampMagnitude(
-            steering,
-            _maxSteering * Time.deltaTime
-        );
-
-        _velocity += steering;
-        _velocity = Vector3.ClampMagnitude(_velocity, _maxSpeed);
+        _stateMachine.Update();
 
         transform.position += _velocity * Time.deltaTime;
 
@@ -42,71 +34,26 @@ public class Boid : Agent
             transform.forward = _velocity;
     }
 
-    private Vector3 Seek()
+    private void ApplySteering(Vector3 steering)
     {
-        Vector3 direction = _target.position - transform.position;
-        Vector3 desired = direction.normalized * _maxSpeed;
-
-        return desired - _velocity;
-    }
-    private Vector3 Flee()
-    {
-        Vector3 direction = _target.position - transform.position;
-        Vector3 desired = -direction.normalized * _maxSpeed;
-
-        return desired - _velocity;
-    }
-    private Vector3 Arrive()
-    {
-        Vector3 direction = _target.position - transform.position;
-        float distance = direction.magnitude;
-
-        float speed = _maxSpeed;
-
-        if (distance < _slowingDistance)
-            speed = _maxSpeed * (distance / _slowingDistance);
-
-        Vector3 desired = direction.normalized * speed;
-
-        return desired - _velocity;
-    }
-    private Vector3 Pursuit()
-    {
-        Vector3 futurePosition = CalculateFuture();
-
-        Vector3 direction = futurePosition - transform.position;
-        Vector3 desired = direction.normalized * _maxSpeed;
-
-        return desired - _velocity;
-    }
-
-    private Vector3 Evade()
-    {
-        Vector3 futurePosition = CalculateFuture();
-
-        Vector3 direction = futurePosition - transform.position;
-        Vector3 desired = -direction.normalized * _maxSpeed;
-
-        return desired - _velocity;
-    }
-
-
-    private Vector3 CalculateFuture()
-    {
-        float distance = Vector3.Distance(
-            transform.position,
-            _target.position
+        steering = Vector3.ClampMagnitude(
+            steering,
+            _maxSteering * Time.deltaTime
         );
 
-        float prediction = distance / _maxSpeed;
+        _velocity += steering;
 
-        return _target.position + _target.GetComponent<Agent>().Velocity * prediction;
+        _velocity = Vector3.ClampMagnitude(
+            _velocity,
+            _maxSpeed
+        );
     }
+
     private Vector3 Separation()
     {
         Collider[] colliders = Physics.OverlapSphere(
             transform.position,
-            _perception.PerceptionRadius
+            _separationRadius
         );
 
         Vector3 desired = Vector3.zero;
@@ -133,6 +80,7 @@ public class Boid : Agent
 
         return desired.normalized * _maxSpeed - _velocity;
     }
+
     private Vector3 Alignment()
     {
         Collider[] colliders = Physics.OverlapSphere(
@@ -164,6 +112,7 @@ public class Boid : Agent
 
         return desired.normalized * _maxSpeed - _velocity;
     }
+
     private Vector3 Cohesion()
     {
         Collider[] colliders = Physics.OverlapSphere(
@@ -198,5 +147,13 @@ public class Boid : Agent
 
         return desired - _velocity;
     }
+    public void SetSteering(Vector3 steering)
+    {
+        ApplySteering(steering);
+    }
 
+    public Vector3 CalculateFlocking()
+    {
+        return Separation() + Alignment() + Cohesion();
+    }
 }

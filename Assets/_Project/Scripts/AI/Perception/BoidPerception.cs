@@ -11,4 +11,21 @@ public class BoidPerception : MonoBehaviour
         return (position - transform.position).sqrMagnitude
             <= _perceptionRadius * _perceptionRadius;
     }
+    public Hunter DetectHunter()
+    {
+        Collider[] colliders = Physics.OverlapSphere(
+            transform.position,
+            _perceptionRadius
+        );
+
+        foreach (Collider collider in colliders)
+        {
+            Hunter hunter = collider.GetComponent<Hunter>();
+
+            if (hunter != null)
+                return hunter;
+        }
+
+        return null;
+    }
 }
