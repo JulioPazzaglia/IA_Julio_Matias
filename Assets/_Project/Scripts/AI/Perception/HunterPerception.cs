@@ -23,8 +23,31 @@ public class HunterPerception : MonoBehaviour
         {
             Boid boid = collider.GetComponent<Boid>();
 
-            if (boid != null)
+            if (boid != null && boid.IsAlive)
                 return boid;
+        }
+
+        return null;
+    }
+    public Boid DetectDeadBoid()
+    {
+        Collider[] colliders = Physics.OverlapSphere(
+            transform.position,
+            _perceptionRadius
+        );
+
+        foreach (Collider collider in colliders)
+        {
+            Boid boid = collider.GetComponent<Boid>();
+
+            if (boid != null && !boid.IsAlive)
+            {
+                Debug.Log(
+                    "[HUNTER] Detectó un Boid muerto."
+                );
+
+                return boid;
+            }
         }
 
         return null;

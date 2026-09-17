@@ -4,15 +4,22 @@ public class Hunter : Agent
 {
     [SerializeField] private float _maxSpeed = 3f;
     [SerializeField] private float _maxSteering = 3f;
+    [SerializeField] private float _meleeDamage = 100f;
+    [SerializeField] private float _rangeDamage = 50f;
 
     [SerializeField] private Transform _waypointA;
     [SerializeField] private Transform _waypointB;
+    [SerializeField] private Transform _waypointC;
+    [SerializeField] private Transform _waypointD;
 
     [SerializeField] private HunterPerception _perception;
 
     [SerializeField] private float _TBA = 3f;
     [SerializeField] private float _rangeAttackRadius = 8f;
     [SerializeField] private float _meleeAttackRadius = 2f;
+    [SerializeField] private float _attackStopTime = 0.5f;
+
+    private float _attackStopTimer;
 
     private float _tbaTimer;
 
@@ -24,6 +31,8 @@ public class Hunter : Agent
 
     public Transform WaypointA => _waypointA;
     public Transform WaypointB => _waypointB;
+    public Transform WaypointC => _waypointC;
+    public Transform WaypointD => _waypointD;
 
     public HunterPerception Perception => _perception;
 
@@ -45,12 +54,23 @@ public class Hunter : Agent
     {
         _tbaTimer += Time.deltaTime;
 
-        _stateMachine.Update();
+        if (_attackStopTimer > 0f)
+        {
+            _attackStopTimer -= Time.deltaTime;
+            _velocity = Vector3.zero;
+        }
+        else
+        {
+            _stateMachine.Update();
 
-        transform.position += _velocity * Time.deltaTime;
+            transform.position += _velocity * Time.deltaTime;
 
-        if (_velocity != Vector3.zero)
-            transform.forward = _velocity;
+            transform.position =
+                Bounds.Instance.OutOfBounds(transform.position);
+
+            if (_velocity != Vector3.zero)
+                transform.forward = _velocity;
+        }
     }
 
     public void SetTarget(Boid target)
@@ -77,22 +97,32 @@ public class Hunter : Agent
     {
         _velocity = Vector3.zero;
 
-        ResetTBA();
+        Debug.Log("[HUNTER] Ataque melee");
 
-        // Daño melee al Boid
+        _target.TakeDamage(_meleeDamage);
+
+        ResetTBA();
     }
 
     public void RangedAttack()
     {
         _velocity = Vector3.zero;
 
+        Debug.Log("[HUNTER] Ataque ranged");
+
+        _target.TakeDamage(_rangeDamage);
+
         ResetTBA();
 
-        // Daño ranged al Boid
+        _attackStopTimer = _attackStopTime;
     }
 
     private void ResetTBA()
     {
         _tbaTimer = 0f;
+    }
+    public void SetVelocity(Vector3 velocity)
+    {
+        _velocity = velocity;
     }
 }
