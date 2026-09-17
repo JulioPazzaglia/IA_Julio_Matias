@@ -1,76 +1,94 @@
 using UnityEngine;
 
-public enum HunterStateType
-{
-    Patrol,
-    Attack
-}
-
 public class Hunter : Agent
 {
     [SerializeField] private float _maxSpeed = 3f;
     [SerializeField] private float _maxSteering = 3f;
+
     [SerializeField] private Transform _waypointA;
     [SerializeField] private Transform _waypointB;
+
     [SerializeField] private HunterPerception _perception;
 
     [SerializeField] private float _TBA = 3f;
     [SerializeField] private float _rangeAttackRadius = 8f;
     [SerializeField] private float _meleeAttackRadius = 2f;
+
+    private float _tbaTimer;
+
+    private HunterStateMachine _stateMachine;
+
+    private Boid _target;
+
     public float MaxSpeed => _maxSpeed;
-    public float TBA => _TBA;
+    public Transform WaypointA => _waypointA;
+    public Transform WaypointB => _waypointB;
+    public HunterPerception Perception => _perception;
+
     public float RangeAttackRadius => _rangeAttackRadius;
     public float MeleeAttackRadius => _meleeAttackRadius;
-    private Boid _target;
+
     public Boid Target => _target;
+
+    public bool CanAttack => _tbaTimer >= _TBA;
+
+    private void Awake()
+    {
+        _tbaTimer = _TBA;
+
+        _stateMachine = new HunterStateMachine(this);
+    }
+
+    private void Update()
+    {
+        _tbaTimer += Time.deltaTime;
+
+        _stateMachine.Update();
+
+        transform.position += _velocity * Time.deltaTime;
+
+        if (_velocity != Vector3.zero)
+            transform.forward = _velocity;
+    }
 
     public void SetTarget(Boid target)
     {
         _target = target;
     }
 
-    public void SetVelocity(Vector3 velocity)
+    public void SetSteering(Vector3 steering)
     {
-        _velocity = velocity;
-    }
-
-    private StateMachine _stateMachine;
-    private HunterPatrolState _patrolState;
-    private HunterAttackState _attackState;
-
-    private void Awake()
-    {
-        _stateMachine = new StateMachine();
-
-        _patrolState = new HunterPatrolState(
-    this,
-    _waypointA,
-    _waypointB,
-    _perception,
-    _stateMachine
-);
-
-        _attackState = new HunterAttackState(
-            this,
-            _stateMachine
+        steering = Vector3.ClampMagnitude(
+            steering,
+            _maxSteering * Time.deltaTime
         );
 
-        _stateMachine.RegisterState(HunterStateType.Patrol, _patrolState);
-        _stateMachine.RegisterState(HunterStateType.Attack, _attackState);
+        _velocity += steering;
 
-        _stateMachine.ChangeState(HunterStateType.Patrol);
+        _velocity = Vector3.ClampMagnitude(
+            _velocity,
+            _maxSpeed
+        );
     }
 
-    private void Update()
+    public void MeleeAttack()
     {
+        _velocity = Vector3.zero;
+        ResetTBA();
 
-        _velocity = Vector3.ClampMagnitude(_velocity, _maxSpeed);
+        // Daño melee al Boid
+    }
 
-        transform.position += _velocity * Time.deltaTime;
+    public void RangedAttack()
+    {
+        _velocity = Vector3.zero;
+        ResetTBA();
 
-        if (_velocity != Vector3.zero)
-            transform.forward = _velocity;
+        // Daño ranged al Boid
+    }
 
-        _stateMachine.Update();
+    private void ResetTBA()
+    {
+        _tbaTimer = 0f;
     }
 }
