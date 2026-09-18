@@ -96,8 +96,6 @@ public class HunterStateMachine
             {
                 _hunter.SetTarget(deadBoid);
 
-                Debug.Log("[HUNTER] Detectó un Boid muerto. Entrando en Gather.");
-
                 _stateMachine.ChangeState(HunterStateType.Gather);
             }
         }
@@ -125,8 +123,6 @@ public class HunterStateMachine
 
             if (!_hunter.Perception.InRange(_hunter.Target.transform.position))
             {
-                Debug.Log("[HUNTER] Perdió al Boid. Volviendo a Patrol.");
-
                 _stateMachine.ChangeState(HunterStateType.Patrol);
 
                 return;
@@ -147,7 +143,11 @@ public class HunterStateMachine
                     return;
                 }
 
-                Vector3 persuitSteering = Steering.Pursuit(_hunter, _hunter.Target, _hunter.MaxSpeed);
+                Vector3 persuitSteering = Steering.Pursuit(
+                    _hunter,
+                    _hunter.Target,
+                    _hunter.MaxSpeed
+                );
 
                 _hunter.SetSteering(persuitSteering);
 
@@ -190,10 +190,12 @@ public class HunterStateMachine
             _hunter = hunter;
             _stateMachine = stateMachine;
         }
+
         public override void Enter()
         {
             _gatherTimer = 0f;
         }
+
         public override void Update()
         {
             if (_hunter.Target == null)
@@ -216,10 +218,6 @@ public class HunterStateMachine
 
                 if (_gatherTimer >= _gatherDuration)
                 {
-                    Debug.Log(
-                        "[HUNTER] Terminó de recoger al Boid."
-                    );
-
                     Trap trap = _hunter.Target.TargetTrap;
 
                     _hunter.Target.StartRespawn();
@@ -230,9 +228,7 @@ public class HunterStateMachine
 
                     _hunter.Target.ClearTargetTrap();
 
-                    _stateMachine.ChangeState(
-                        HunterStateType.Patrol
-                    );
+                    _stateMachine.ChangeState(HunterStateType.Patrol);
                 }
 
                 return;

@@ -123,8 +123,6 @@ public class Hunter : Agent
     {
         _velocity = Vector3.zero;
 
-        Debug.Log("[HUNTER] Ataque melee");
-
         _target.TakeDamage(_meleeDamage);
 
         ResetTBA();
@@ -133,8 +131,6 @@ public class Hunter : Agent
     public void RangedAttack()
     {
         _velocity = Vector3.zero;
-
-        Debug.Log("[HUNTER] Ataque ranged");
 
         _target.TakeDamage(_rangeDamage);
 
@@ -152,29 +148,23 @@ public class Hunter : Agent
     {
         _velocity = velocity;
     }
+
     private void GenerateTrap()
     {
-        Trap trap = Instantiate(
-            _trapPrefab,
-            transform.position,
-            Quaternion.identity
-        );
+        Trap trap = Instantiate(_trapPrefab, transform.position, Quaternion.identity);
 
         trap.Activate(transform.position);
 
         _activeTrapCount++;
 
-        _trapTimer = Random.Range(
-            _trapInterval - _trapVariation,
-            _trapInterval + _trapVariation
-        );
-
-        Debug.Log("[HUNTER] Colocó una trampa.");
+        _trapTimer = Random.Range(_trapInterval - _trapVariation, _trapInterval + _trapVariation);
     }
+
     public void UpdateTrapTimer()
     {
         _trapTimer -= Time.deltaTime;
     }
+
     public void TryGenerateTrap()
     {
         if (_trapTimer > 0f)
@@ -185,6 +175,7 @@ public class Hunter : Agent
 
         GenerateTrap();
     }
+
     public void RemoveTrap(Trap trap)
     {
         if (trap == null)
@@ -193,6 +184,7 @@ public class Hunter : Agent
         trap.Deactivate();
         _activeTrapCount--;
     }
+
     public void ResetTrapTimer()
     {
         _trapTimer = 5f;

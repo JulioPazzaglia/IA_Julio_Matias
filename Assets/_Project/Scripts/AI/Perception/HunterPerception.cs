@@ -2,7 +2,8 @@ using UnityEngine;
 
 public class HunterPerception : MonoBehaviour
 {
-    [SerializeField] private float _perceptionRadius = 10f;
+    [SerializeField]
+    private float _perceptionRadius = 10f;
 
     public float PerceptionRadius => _perceptionRadius;
 
@@ -14,10 +15,7 @@ public class HunterPerception : MonoBehaviour
 
     public Boid DetectBoid()
     {
-        Collider[] colliders = Physics.OverlapSphere(
-            transform.position,
-            _perceptionRadius
-        );
+        Collider[] colliders = Physics.OverlapSphere(transform.position, _perceptionRadius);
 
         foreach (Collider collider in colliders)
         {
@@ -29,12 +27,10 @@ public class HunterPerception : MonoBehaviour
 
         return null;
     }
+
     public Boid DetectDeadBoid()
     {
-        Collider[] colliders = Physics.OverlapSphere(
-            transform.position,
-            _perceptionRadius
-        );
+        Collider[] colliders = Physics.OverlapSphere(transform.position, _perceptionRadius);
 
         foreach (Collider collider in colliders)
         {
@@ -42,10 +38,6 @@ public class HunterPerception : MonoBehaviour
 
             if (boid != null && !boid.IsAlive)
             {
-                Debug.Log(
-                    "[HUNTER] Detectó un Boid muerto."
-                );
-
                 return boid;
             }
         }
