@@ -42,9 +42,7 @@ public class HunterStateMachine
         private Transform _currentWaypoint;
         private int _currentWaypointIndex;
 
-        public PatrolState(
-            Hunter hunter,
-            StateMachine stateMachine)
+        public PatrolState(Hunter hunter, StateMachine stateMachine)
         {
             _hunter = hunter;
             _stateMachine = stateMachine;
@@ -55,8 +53,10 @@ public class HunterStateMachine
 
         public override void Update()
         {
-            Vector3 direction =
-                _currentWaypoint.position - _hunter.transform.position;
+            _hunter.UpdateTrapTimer();
+            _hunter.TryGenerateTrap();
+
+            Vector3 direction = _currentWaypoint.position - _hunter.transform.position;
 
             if (direction.magnitude < 1f)
             {
@@ -75,11 +75,7 @@ public class HunterStateMachine
                     _currentWaypoint = _hunter.WaypointD;
             }
 
-            Vector3 steering = Steering.Seek(
-                _hunter,
-                _currentWaypoint,
-                _hunter.MaxSpeed
-            );
+            Vector3 steering = Steering.Seek(_hunter, _currentWaypoint, _hunter.MaxSpeed);
 
             _hunter.SetSteering(steering);
 
@@ -89,9 +85,7 @@ public class HunterStateMachine
             {
                 _hunter.SetTarget(detectedBoid);
 
-                _stateMachine.ChangeState(
-                    HunterStateType.Attack
-                );
+                _stateMachine.ChangeState(HunterStateType.Attack);
 
                 return;
             }
@@ -102,13 +96,7 @@ public class HunterStateMachine
             {
                 _hunter.SetTarget(deadBoid);
 
-                Debug.Log(
-                    "[HUNTER] Detectó un Boid muerto. Entrando en Gather."
-                );
-
-                _stateMachine.ChangeState(
-                    HunterStateType.Gather
-                );
+                _stateMachine.ChangeState(HunterStateType.Gather);
             }
         }
     }
@@ -118,9 +106,7 @@ public class HunterStateMachine
         private Hunter _hunter;
         private StateMachine _stateMachine;
 
-        public AttackState(
-            Hunter hunter,
-            StateMachine stateMachine)
+        public AttackState(Hunter hunter, StateMachine stateMachine)
         {
             _hunter = hunter;
             _stateMachine = stateMachine;
@@ -130,23 +116,14 @@ public class HunterStateMachine
         {
             if (_hunter.Target == null)
             {
-                _stateMachine.ChangeState(
-                    HunterStateType.Patrol
-                );
+                _stateMachine.ChangeState(HunterStateType.Patrol);
 
                 return;
             }
 
-            if (!_hunter.Perception.InRange(
-                    _hunter.Target.transform.position))
+            if (!_hunter.Perception.InRange(_hunter.Target.transform.position))
             {
-                Debug.Log(
-                    "[HUNTER] Perdió al Boid. Volviendo a Patrol."
-                );
-
-                _stateMachine.ChangeState(
-                    HunterStateType.Patrol
-                );
+                _stateMachine.ChangeState(HunterStateType.Patrol);
 
                 return;
             }
@@ -155,35 +132,46 @@ public class HunterStateMachine
                 _hunter.transform.position,
                 _hunter.Target.transform.position
             );
+            if (_hunter.Target.TargetTrap != null && _hunter.Target.TargetTrap.IsOccupied)
+            {
+                if (distance <= _hunter.MeleeAttackRadius)
+                {
+                    _hunter.MeleeAttack();
 
+                    _stateMachine.ChangeState(HunterStateType.Gather);
+
+                    return;
+                }
+
+                Vector3 persuitSteering = Steering.Pursuit(
+                    _hunter,
+                    _hunter.Target,
+                    _hunter.MaxSpeed
+                );
+
+                _hunter.SetSteering(persuitSteering);
+
+                return;
+            }
             if (distance <= _hunter.MeleeAttackRadius)
             {
                 _hunter.MeleeAttack();
 
-                _stateMachine.ChangeState(
-                    HunterStateType.Patrol
-                );
+                _stateMachine.ChangeState(HunterStateType.Patrol);
 
                 return;
             }
 
-            if (distance <= _hunter.RangeAttackRadius
-                && _hunter.CanAttack)
+            if (distance <= _hunter.RangeAttackRadius && _hunter.CanAttack)
             {
                 _hunter.RangedAttack();
 
-                _stateMachine.ChangeState(
-                    HunterStateType.Patrol
-                );
+                _stateMachine.ChangeState(HunterStateType.Patrol);
 
                 return;
             }
 
-            Vector3 steering = Steering.Pursuit(
-                _hunter,
-                _hunter.Target,
-                _hunter.MaxSpeed
-            );
+            Vector3 steering = Steering.Pursuit(_hunter, _hunter.Target, _hunter.MaxSpeed);
 
             _hunter.SetSteering(steering);
         }
@@ -197,21 +185,22 @@ public class HunterStateMachine
         private float _gatherTimer;
         private float _gatherDuration = 2f;
 
-        public GatherState(
-            Hunter hunter,
-            StateMachine stateMachine)
+        public GatherState(Hunter hunter, StateMachine stateMachine)
         {
             _hunter = hunter;
             _stateMachine = stateMachine;
+        }
+
+        public override void Enter()
+        {
+            _gatherTimer = 0f;
         }
 
         public override void Update()
         {
             if (_hunter.Target == null)
             {
-                _stateMachine.ChangeState(
-                    HunterStateType.Patrol
-                );
+                _stateMachine.ChangeState(HunterStateType.Patrol);
 
                 return;
             }
@@ -229,15 +218,17 @@ public class HunterStateMachine
 
                 if (_gatherTimer >= _gatherDuration)
                 {
-                    Debug.Log(
-                        "[HUNTER] Terminó de recoger al Boid."
-                    );
+                    Trap trap = _hunter.Target.TargetTrap;
 
                     _hunter.Target.StartRespawn();
 
-                    _stateMachine.ChangeState(
-                        HunterStateType.Patrol
-                    );
+                    _hunter.RemoveTrap(trap);
+
+                    _hunter.ResetTrapTimer();
+
+                    _hunter.Target.ClearTargetTrap();
+
+                    _stateMachine.ChangeState(HunterStateType.Patrol);
                 }
 
                 return;
@@ -259,5 +250,5 @@ public enum HunterStateType
 {
     Patrol,
     Attack,
-    Gather
+    Gather,
 }

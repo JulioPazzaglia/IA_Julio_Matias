@@ -2,30 +2,45 @@ using UnityEngine;
 
 public class Boid : Agent
 {
-    [SerializeField] private float _maxSpeed = 5f;
-    [SerializeField] private float _maxSteering = 10f;
-    [SerializeField] private float _separationRadius = 2f;
-    [SerializeField] private BoidPerception _perception;
-    [SerializeField] private float _maxLife = 100f;
-    [SerializeField] private float _respawnDelay = 3f;
+    private MeshRenderer _meshRenderer;
+    private Color _originalColor;
+
+    [SerializeField]
+    private float _maxSpeed = 5f;
+
+    [SerializeField]
+    private float _maxSteering = 10f;
+
+    [SerializeField]
+    private float _separationRadius = 2f;
+
+    [SerializeField]
+    private BoidPerception _perception;
+
+    [SerializeField]
+    private float _maxLife = 100f;
+
+    [SerializeField]
+    private float _respawnDelay = 3f;
 
     private float _life;
     public bool IsAlive => _life > 0f;
 
     private BoidStateMachine _stateMachine;
+    private Trap _targetTrap;
 
     public float MaxSpeed => _maxSpeed;
     public BoidPerception Perception => _perception;
+    public Trap TargetTrap => _targetTrap;
 
     private void Awake()
     {
         _stateMachine = new BoidStateMachine(this);
 
-        Vector3 randomDirection = new Vector3(
-            Random.Range(-1f, 1f),
-            0f,
-            Random.Range(-1f, 1f)
-        );
+        Vector3 randomDirection = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
+
+        _meshRenderer = GetComponent<MeshRenderer>();
+        _originalColor = _meshRenderer.material.color;
 
         _life = _maxLife;
 
@@ -36,10 +51,11 @@ public class Boid : Agent
     {
         _stateMachine.Update();
 
+        _velocity.y = 0f;
+
         transform.position += _velocity * Time.deltaTime;
 
-        transform.position =
-            Bounds.Instance.OutOfBounds(transform.position);
+        transform.position = Bounds.Instance.OutOfBounds(transform.position);
 
         if (_velocity != Vector3.zero)
             transform.forward = _velocity;
@@ -47,25 +63,16 @@ public class Boid : Agent
 
     private void ApplySteering(Vector3 steering)
     {
-        steering = Vector3.ClampMagnitude(
-            steering,
-            _maxSteering * Time.deltaTime
-        );
+        steering = Vector3.ClampMagnitude(steering, _maxSteering * Time.deltaTime);
 
         _velocity += steering;
 
-        _velocity = Vector3.ClampMagnitude(
-            _velocity,
-            _maxSpeed
-        );
+        _velocity = Vector3.ClampMagnitude(_velocity, _maxSpeed);
     }
 
     private Vector3 Separation()
     {
-        Collider[] colliders = Physics.OverlapSphere(
-            transform.position,
-            _separationRadius
-        );
+        Collider[] colliders = Physics.OverlapSphere(transform.position, _separationRadius);
 
         Vector3 desired = Vector3.zero;
         int count = 0;
@@ -79,8 +86,7 @@ public class Boid : Agent
 
             if (_perception.InRange(agent.transform.position))
             {
-                desired +=
-                    transform.position - agent.transform.position;
+                desired += transform.position - agent.transform.position;
 
                 count++;
             }
@@ -155,11 +161,9 @@ public class Boid : Agent
 
         center /= count;
 
-        Vector3 direction =
-            center - transform.position;
+        Vector3 direction = center - transform.position;
 
-        Vector3 desired =
-            direction.normalized * _maxSpeed;
+        Vector3 desired = direction.normalized * _maxSpeed;
 
         return desired - _velocity;
     }
@@ -171,33 +175,22 @@ public class Boid : Agent
 
     public Vector3 CalculateFlocking()
     {
-        return Separation() * 9f
-             + Alignment() * 15f
-             + Cohesion() * 5f;
+        return Separation() * 9f + Alignment() * 15f + Cohesion() * 5f;
     }
 
     public void TakeDamage(float damage)
     {
         _life -= damage;
 
-        Debug.Log(
-            "[BOID] " + gameObject.name +
-            " recibió " + damage +
-            " de daño. Vida: " + _life
-        );
+        _meshRenderer.material.color = Color.red;
+
+        Invoke(nameof(ResetColor), 0.15f);
 
         if (_life <= 0f)
         {
             _life = 0f;
 
-            Debug.Log(
-                "[BOID] " + gameObject.name +
-                " murió."
-            );
-
-            _stateMachine.ChangeState(
-                BoidStateType.Hunted
-            );
+            _stateMachine.ChangeState(BoidStateType.Hunted);
         }
     }
 
@@ -206,43 +199,40 @@ public class Boid : Agent
         _velocity = velocity;
     }
 
+    public void SetTargetTrap(Trap trap)
+    {
+        _targetTrap = trap;
+    }
+
+    public void ClearTargetTrap()
+    {
+        _targetTrap = null;
+    }
+
     public void StartRespawn()
     {
         gameObject.SetActive(false);
 
-        Invoke(
-            nameof(Respawn),
-            _respawnDelay
-        );
+        Invoke(nameof(Respawn), _respawnDelay);
     }
 
     private void Respawn()
     {
         _life = _maxLife;
 
-        transform.position =
-            Bounds.Instance.RandomPosition();
+        transform.position = Bounds.Instance.RandomPosition();
 
-        Vector3 randomDirection = new Vector3(
-    Random.Range(-1f, 1f),
-    0f,
-    Random.Range(-1f, 1f)
-);
+        Vector3 randomDirection = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
 
         _velocity = randomDirection.normalized * _maxSpeed;
 
-        _velocity =
-            randomDirection.normalized * _maxSpeed;
-
         gameObject.SetActive(true);
 
-        _stateMachine.ChangeState(
-            BoidStateType.Flocking
-        );
+        _stateMachine.ChangeState(BoidStateType.Flocking);
+    }
 
-        Debug.Log(
-            "[BOID] " + gameObject.name +
-            " reapareció."
-        );
+    private void ResetColor()
+    {
+        _meshRenderer.material.color = _originalColor;
     }
 }
