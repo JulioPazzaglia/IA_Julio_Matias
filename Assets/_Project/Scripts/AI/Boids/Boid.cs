@@ -2,6 +2,9 @@ using UnityEngine;
 
 public class Boid : Agent
 {
+    private MeshRenderer _meshRenderer;
+    private Color _originalColor;
+
     [SerializeField] private float _maxSpeed = 5f;
     [SerializeField] private float _maxSteering = 10f;
     [SerializeField] private float _separationRadius = 2f;
@@ -13,9 +16,11 @@ public class Boid : Agent
     public bool IsAlive => _life > 0f;
 
     private BoidStateMachine _stateMachine;
+    private Trap _targetTrap;
 
     public float MaxSpeed => _maxSpeed;
     public BoidPerception Perception => _perception;
+    public Trap TargetTrap => _targetTrap;
 
     private void Awake()
     {
@@ -27,6 +32,9 @@ public class Boid : Agent
             Random.Range(-1f, 1f)
         );
 
+        _meshRenderer = GetComponent<MeshRenderer>();
+        _originalColor = _meshRenderer.material.color;
+
         _life = _maxLife;
 
         _velocity = randomDirection.normalized * _maxSpeed;
@@ -35,6 +43,8 @@ public class Boid : Agent
     private void Update()
     {
         _stateMachine.Update();
+
+        _velocity.y = 0f;
 
         transform.position += _velocity * Time.deltaTime;
 
@@ -180,6 +190,13 @@ public class Boid : Agent
     {
         _life -= damage;
 
+        _meshRenderer.material.color = Color.red;
+
+        Invoke(
+            nameof(ResetColor),
+            0.15f
+        );
+
         Debug.Log(
             "[BOID] " + gameObject.name +
             " recibió " + damage +
@@ -206,6 +223,16 @@ public class Boid : Agent
         _velocity = velocity;
     }
 
+    public void SetTargetTrap(Trap trap)
+    {
+        _targetTrap = trap;
+    }
+
+    public void ClearTargetTrap()
+    {
+        _targetTrap = null;
+    }
+
     public void StartRespawn()
     {
         gameObject.SetActive(false);
@@ -224,12 +251,10 @@ public class Boid : Agent
             Bounds.Instance.RandomPosition();
 
         Vector3 randomDirection = new Vector3(
-    Random.Range(-1f, 1f),
-    0f,
-    Random.Range(-1f, 1f)
-);
-
-        _velocity = randomDirection.normalized * _maxSpeed;
+            Random.Range(-1f, 1f),
+            0f,
+            Random.Range(-1f, 1f)
+        );
 
         _velocity =
             randomDirection.normalized * _maxSpeed;
@@ -244,5 +269,10 @@ public class Boid : Agent
             "[BOID] " + gameObject.name +
             " reapareció."
         );
+    }
+
+    private void ResetColor()
+    {
+        _meshRenderer.material.color = _originalColor;
     }
 }
