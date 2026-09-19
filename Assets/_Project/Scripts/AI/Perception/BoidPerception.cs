@@ -28,4 +28,21 @@ public class BoidPerception : MonoBehaviour
 
         return null;
     }
+    public Trap DetectTrap()
+    {
+        Collider[] colliders = Physics.OverlapSphere(
+            transform.position,
+            _perceptionRadius
+        );
+
+        foreach (Collider collider in colliders)
+        {
+            Trap trap = collider.GetComponent<Trap>();
+
+            if (trap != null && trap.IsActive && !trap.IsOccupied)
+                return trap;
+        }
+
+        return null;
+    }
 }
