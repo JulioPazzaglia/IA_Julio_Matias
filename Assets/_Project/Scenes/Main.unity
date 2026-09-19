@@ -185,6 +185,7 @@ MonoBehaviour:
   _separationRadius: 2
   _perception: {fileID: 37571259}
   _maxLife: 100
+  _respawnDelay: 3
 --- !u!136 &37571261
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -331,6 +332,7 @@ MonoBehaviour:
   _separationRadius: 2
   _perception: {fileID: 89108231}
   _maxLife: 100
+  _respawnDelay: 3
 --- !u!136 &89108233
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -471,6 +473,10 @@ MonoBehaviour:
   _TBA: 3
   _rangeAttackRadius: 8
   _meleeAttackRadius: 2
+  _attackStopTime: 0.5
+  _trapPrefab: {fileID: 316415368500871600, guid: dcaacfb4f587c6140a1954a39d520168, type: 3}
+  _trapInterval: 5
+  _trapVariation: 2
 --- !u!136 &232185484
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -617,6 +623,7 @@ MonoBehaviour:
   _separationRadius: 2
   _perception: {fileID: 284519615}
   _maxLife: 100
+  _respawnDelay: 3
 --- !u!136 &284519612
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -776,6 +783,7 @@ MonoBehaviour:
   _separationRadius: 2
   _perception: {fileID: 580093830}
   _maxLife: 100
+  _respawnDelay: 3
 --- !u!136 &580093832
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -942,13 +950,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 824538776}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.15168309, y: -0, z: -0, w: 0.9884292}
-  m_LocalPosition: {x: 0, y: 14.4, z: -21.9}
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: -1, y: 86.4, z: 0.1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 17.449, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!114 &824538780
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1090,6 +1098,7 @@ MonoBehaviour:
   _separationRadius: 2
   _perception: {fileID: 989920462}
   _maxLife: 100
+  _respawnDelay: 3
 --- !u!136 &989920464
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1340,6 +1349,7 @@ MonoBehaviour:
   _separationRadius: 2
   _perception: {fileID: 1062479625}
   _maxLife: 100
+  _respawnDelay: 3
 --- !u!136 &1062479627
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1517,6 +1527,7 @@ MonoBehaviour:
   _separationRadius: 2
   _perception: {fileID: 1465178072}
   _maxLife: 100
+  _respawnDelay: 3
 --- !u!136 &1465178074
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1663,6 +1674,7 @@ MonoBehaviour:
   _separationRadius: 2
   _perception: {fileID: 1581728809}
   _maxLife: 100
+  _respawnDelay: 3
 --- !u!136 &1581728811
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1917,6 +1929,123 @@ MonoBehaviour:
   _height: 100
   _width: 100
   _drawGizmos: 1
+--- !u!1 &1876159825
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1876159829}
+  - component: {fileID: 1876159828}
+  - component: {fileID: 1876159827}
+  - component: {fileID: 1876159826}
+  m_Layer: 0
+  m_Name: Plane
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!64 &1876159826
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1876159825}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &1876159827
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1876159825}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: a3dff02ab1868cb4088255c0ec0a9c64, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1876159828
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1876159825}
+  m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!224 &1876159829
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1876159825}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: -0.22377}
+  m_LocalScale: {x: 10.132897, y: 1, z: 9.765633}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0.3, y: -1.9}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1949717790
 GameObject:
   m_ObjectHideFlags: 0
@@ -2049,6 +2178,7 @@ MonoBehaviour:
   _separationRadius: 2
   _perception: {fileID: 2079626972}
   _maxLife: 100
+  _respawnDelay: 3
 --- !u!136 &2079626974
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -2195,6 +2325,7 @@ MonoBehaviour:
   _separationRadius: 2
   _perception: {fileID: 2083083712}
   _maxLife: 100
+  _respawnDelay: 3
 --- !u!136 &2083083714
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -2285,3 +2416,4 @@ SceneRoots:
   - {fileID: 1828979654}
   - {fileID: 1048148660}
   - {fileID: 1949717791}
+  - {fileID: 1876159829}
