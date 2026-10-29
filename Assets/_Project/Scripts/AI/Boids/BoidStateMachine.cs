@@ -20,7 +20,7 @@ public class BoidStateMachine
 
         _stateMachine.RegisterState(BoidStateType.Lured, new LuredState(_boid, _stateMachine));
 
-        _stateMachine.RegisterState(BoidStateType.Trapped, new TrappedState(_boid));
+        _stateMachine.RegisterState(BoidStateType.Trapped, new TrappedState(_boid, _stateMachine));
 
         _stateMachine.RegisterState(BoidStateType.Hunted, new HuntedState(_boid));
 
@@ -37,6 +37,8 @@ public class BoidStateMachine
         _stateMachine.ChangeState(state);
     }
 
+    // Estados de la FSM (se mantienen en este archivo para respetar la estructura original).
+
     private class FlockingState : State
     {
         private Boid _boid;
@@ -50,12 +52,14 @@ public class BoidStateMachine
 
         public override void Update()
         {
+            if (_boid.Perception == null)
+                return;
+
             Hunter hunter = _boid.Perception.DetectHunter();
 
             if (hunter != null)
             {
                 _stateMachine.ChangeState(BoidStateType.Evading);
-
                 return;
             }
 
@@ -64,9 +68,7 @@ public class BoidStateMachine
             if (trap != null)
             {
                 _boid.SetTargetTrap(trap);
-
                 _stateMachine.ChangeState(BoidStateType.Lured);
-
                 return;
             }
 
@@ -85,19 +87,25 @@ public class BoidStateMachine
             _stateMachine = stateMachine;
         }
 
+        public override void Enter()
+        {
+            _boid.ClearTargetTrap();
+        }
+
         public override void Update()
         {
+            if (_boid.Perception == null)
+                return;
+
             Hunter hunter = _boid.Perception.DetectHunter();
 
             if (hunter == null)
             {
                 _stateMachine.ChangeState(BoidStateType.Flocking);
-
                 return;
             }
 
             Vector3 steering = Steering.Evade(_boid, hunter, _boid.MaxSpeed);
-
             _boid.SetSteering(steering);
         }
     }
@@ -115,12 +123,14 @@ public class BoidStateMachine
 
         public override void Update()
         {
+            if (_boid.Perception == null)
+                return;
+
             Hunter hunter = _boid.Perception.DetectHunter();
 
             if (hunter != null)
             {
                 _stateMachine.ChangeState(BoidStateType.Evading);
-
                 return;
             }
 
@@ -131,9 +141,7 @@ public class BoidStateMachine
             )
             {
                 _boid.SetTargetTrap(null);
-
                 _stateMachine.ChangeState(BoidStateType.Flocking);
-
                 return;
             }
 
@@ -145,11 +153,8 @@ public class BoidStateMachine
             if (distance <= 1f)
             {
                 _boid.SetVelocity(Vector3.zero);
-
                 _boid.TargetTrap.Occupy();
-
                 _stateMachine.ChangeState(BoidStateType.Trapped);
-
                 return;
             }
 
@@ -167,15 +172,44 @@ public class BoidStateMachine
     private class TrappedState : State
     {
         private Boid _boid;
+        private StateMachine _stateMachine;
+        private float _attackTimer;
 
-        public TrappedState(Boid boid)
+        public TrappedState(Boid boid, StateMachine stateMachine)
         {
             _boid = boid;
+            _stateMachine = stateMachine;
+        }
+
+        public override void Enter()
+        {
+            _attackTimer = 0f;
         }
 
         public override void Update()
         {
             _boid.SetVelocity(Vector3.zero);
+
+            if (_boid.TargetTrap == null || !_boid.TargetTrap.IsActive)
+            {
+                _boid.ClearTargetTrap();
+                _stateMachine.ChangeState(BoidStateType.Flocking);
+                return;
+            }
+
+            _attackTimer += Time.deltaTime;
+
+            if (_attackTimer >= Mathf.Max(0.1f, _boid.TrapAttackInterval))
+            {
+                _attackTimer = 0f;
+                _boid.TargetTrap.TakeDamage(_boid.TrapDamage);
+
+                if (!_boid.TargetTrap.IsActive)
+                {
+                    _boid.ClearTargetTrap();
+                    _stateMachine.ChangeState(BoidStateType.Flocking);
+                }
+            }
         }
     }
 
@@ -186,6 +220,11 @@ public class BoidStateMachine
         public HuntedState(Boid boid)
         {
             _boid = boid;
+        }
+
+        public override void Enter()
+        {
+            _boid.SetVelocity(Vector3.zero);
         }
 
         public override void Update()
