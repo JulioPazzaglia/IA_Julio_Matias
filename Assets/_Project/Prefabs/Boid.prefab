@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 2396588037573321551}
   - component: {fileID: 2306312223282392629}
   - component: {fileID: 6607798294689502696}
-  - component: {fileID: 4296242496645567049}
+  - component: {fileID: 8031487692866733282}
   m_Layer: 0
   m_Name: Boid
   m_TagString: Untagged
@@ -129,7 +129,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoidPerception
   _perceptionRadius: 10
---- !u!114 &4296242496645567049
+  _scanInterval: 0.2
+  _maxColliders: 64
+--- !u!114 &8031487692866733282
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -138,12 +140,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 525233348394069841}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c80da0816b5cc17428207716c92e57a5, type: 3}
+  m_Script: {fileID: 11500000, guid: 2753c4ccc79b25d438b37497d1c0570c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Boid
   _maxSpeed: 5
   _maxSteering: 10
   _separationRadius: 2
   _perception: {fileID: 6607798294689502696}
+  _separationWeight: 9
+  _alignmentWeight: 15
+  _cohesionWeight: 5
   _maxLife: 100
   _respawnDelay: 3
+  _trapDamage: 20
+  _trapAttackInterval: 1
