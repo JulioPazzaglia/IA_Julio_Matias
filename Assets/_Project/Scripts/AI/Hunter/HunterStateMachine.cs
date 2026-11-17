@@ -5,35 +5,26 @@ public class HunterStateMachine
     private StateMachine _stateMachine;
     private Hunter _hunter;
 
-    public string CurrentStateName => _stateMachine.CurrentState != null
-        ? _stateMachine.CurrentState.GetType().Name : "Sin estado";
+    public string CurrentStateName
+    {
+        get
+        {
+            if (_stateMachine.CurrentState is PatrolState) return "Patrol";
+            if (_stateMachine.CurrentState is HuntState) return "Hunt";
+            if (_stateMachine.CurrentState is GatherState) return "Gather";
+            if (_stateMachine.CurrentState is RestState) return "Rest";
+            return "Sin estado";
+        }
+    }
 
     public HunterStateMachine(Hunter hunter)
     {
         _hunter = hunter;
-
         _stateMachine = new StateMachine();
-
-        _stateMachine.RegisterState(
-            HunterStateType.Patrol,
-            new PatrolState(_hunter, _stateMachine)
-        );
-
-        _stateMachine.RegisterState(
-            HunterStateType.Attack,
-            new AttackState(_hunter, _stateMachine)
-        );
-
-        _stateMachine.RegisterState(
-            HunterStateType.Chase,
-            new ChaseState(_hunter, _stateMachine)
-        );
-
-        _stateMachine.RegisterState(
-            HunterStateType.Gather,
-            new GatherState(_hunter, _stateMachine)
-        );
-
+        _stateMachine.RegisterState(HunterStateType.Patrol, new PatrolState(_hunter, _stateMachine));
+        _stateMachine.RegisterState(HunterStateType.Hunt, new HuntState(_hunter, _stateMachine));
+        _stateMachine.RegisterState(HunterStateType.Gather, new GatherState(_hunter, _stateMachine));
+        _stateMachine.RegisterState(HunterStateType.Rest, new RestState(_hunter, _stateMachine));
         _stateMachine.ChangeState(HunterStateType.Patrol);
     }
 
@@ -42,13 +33,11 @@ public class HunterStateMachine
         _stateMachine.Update();
     }
 
-    // Estados de la FSM (se mantienen en este archivo para respetar la estructura original).
-
+    // Estados anidados: misma estructura que la StateMachine del proyecto original.
     private class PatrolState : State
     {
         private Hunter _hunter;
         private StateMachine _stateMachine;
-
         private Transform _currentWaypoint;
         private int _currentWaypointIndex;
 
@@ -56,13 +45,14 @@ public class HunterStateMachine
         {
             _hunter = hunter;
             _stateMachine = stateMachine;
-
             _currentWaypointIndex = 0;
             _currentWaypoint = _hunter.WaypointA;
         }
 
         public override void Enter()
         {
+            _hunter.SetVelocity(Vector3.zero);
+            _hunter.SetTarget(null);
             _hunter.SetAction("Patrullando");
         }
 
@@ -71,7 +61,7 @@ public class HunterStateMachine
             _hunter.UpdateTrapTimer();
             _hunter.TryGenerateTrap();
 
-            // Los boids muertos tienen prioridad para no dejar cuerpos sin recoger.
+            // Orden EXIGIDO: primero Boid muerto, luego Boid vivo si TBA termino.
             if (_hunter.Perception != null)
             {
                 Boid deadBoid = _hunter.Perception.DetectDeadBoid();
@@ -82,59 +72,48 @@ public class HunterStateMachine
                     return;
                 }
 
-                Boid detectedBoid = _hunter.Perception.DetectBoid();
-                if (detectedBoid != null && _hunter.CanAttack)
+                if (_hunter.CanAttack && _hunter.Perception.DetectBoid() != null)
                 {
-                    _hunter.SetTarget(detectedBoid);
-                    _stateMachine.ChangeState(HunterStateType.Attack);
+                    _stateMachine.ChangeState(HunterStateType.Hunt);
                     return;
                 }
             }
 
-            // Evita UnassignedReferenceException; igualmente hay que asignar los waypoints.
             if (_currentWaypoint == null)
             {
-                _hunter.SetVelocity(Vector3.zero);
-                return;
+                _currentWaypoint = _hunter.WaypointA;
+                if (_currentWaypoint == null)
+                {
+                    _hunter.SetVelocity(Vector3.zero);
+                    return;
+                }
             }
 
             Vector3 direction = _currentWaypoint.position - _hunter.transform.position;
-
-            if (direction.magnitude < 1f)
+            direction.y = 0f;
+            if (direction.magnitude < _hunter.WaypointReachDistance)
             {
-                _currentWaypointIndex++;
-
-                if (_currentWaypointIndex > 3)
-                    _currentWaypointIndex = 0;
-
-                if (_currentWaypointIndex == 0)
-                    _currentWaypoint = _hunter.WaypointA;
-                else if (_currentWaypointIndex == 1)
-                    _currentWaypoint = _hunter.WaypointB;
-                else if (_currentWaypointIndex == 2)
-                    _currentWaypoint = _hunter.WaypointC;
-                else if (_currentWaypointIndex == 3)
-                    _currentWaypoint = _hunter.WaypointD;
+                _currentWaypointIndex = (_currentWaypointIndex + 1) % 4;
+                if (_currentWaypointIndex == 0) _currentWaypoint = _hunter.WaypointA;
+                else if (_currentWaypointIndex == 1) _currentWaypoint = _hunter.WaypointB;
+                else if (_currentWaypointIndex == 2) _currentWaypoint = _hunter.WaypointC;
+                else _currentWaypoint = _hunter.WaypointD;
             }
 
             if (_currentWaypoint != null)
-            {
-                Vector3 steering = Steering.Seek(_hunter, _currentWaypoint, _hunter.MaxSpeed);
-                _hunter.SetSteering(steering);
-            }
+                _hunter.SetSteering(Steering.Seek(_hunter, _currentWaypoint, _hunter.MaxSpeed));
             else
-            {
                 _hunter.SetVelocity(Vector3.zero);
-            }
         }
     }
 
-    private class AttackState : State
+    private class HuntState : State
     {
         private Hunter _hunter;
         private StateMachine _stateMachine;
+        private Vector3 _lastKnownPosition;
 
-        public AttackState(Hunter hunter, StateMachine stateMachine)
+        public HuntState(Hunter hunter, StateMachine stateMachine)
         {
             _hunter = hunter;
             _stateMachine = stateMachine;
@@ -142,131 +121,90 @@ public class HunterStateMachine
 
         public override void Enter()
         {
-            _hunter.SetAction("Atacando");
+            _hunter.SetAction("Buscando presa en Hunt");
+            _lastKnownPosition = _hunter.transform.position;
+            // La presa se elige EN Hunt, a partir de lo que percibe su sensor.
+            Boid candidate = _hunter.Perception != null ? _hunter.Perception.DetectBoid() : null;
+            _hunter.SetTarget(candidate);
+            if (candidate != null)
+                _lastKnownPosition = candidate.transform.position;
         }
 
         public override void Update()
         {
-            if (_hunter.Target == null || _hunter.Target.IsRespawning)
+            // La energia se consume solamente en Hunt.
+            _hunter.ConsumeEnergy();
+            if (_hunter.Energy <= 0f)
             {
-                _hunter.SetTarget(null);
+                _stateMachine.ChangeState(HunterStateType.Rest);
+                return;
+            }
+
+            Boid target = _hunter.Target;
+            if (target != null && target.IsAlive && target.LeftBoundsSinceTargeted)
+            {
+                // El boid puede haber sido devuelto al otro borde por Bounds.OutOfBounds.
                 _stateMachine.ChangeState(HunterStateType.Patrol);
                 return;
             }
 
-            if (!_hunter.Target.IsAlive)
+            // Un muerto visible permite abandonar Hunt para recolectarlo.
+            Boid deadBoid = _hunter.Perception != null ? _hunter.Perception.DetectDeadBoid() : null;
+            if (deadBoid != null)
             {
+                _hunter.SetTarget(deadBoid);
                 _stateMachine.ChangeState(HunterStateType.Gather);
                 return;
             }
 
-            if (_hunter.Perception == null ||
-                !_hunter.Perception.InRange(_hunter.Target.transform.position))
+            if (target == null || !target.isActiveAndEnabled || !target.IsAlive || target.IsRespawning)
             {
-                _hunter.SetTarget(null);
-                _stateMachine.ChangeState(HunterStateType.Patrol);
-                return;
+                // Si la presa murio, seleccionar otro vivo QUE EL SENSOR PERCIBE.
+                Boid replacement = _hunter.Perception != null ? _hunter.Perception.DetectBoid() : null;
+                _hunter.SetTarget(replacement);
+                target = replacement;
+                if (target == null)
+                {
+                    MoveToLastKnownPosition();
+                    return; // Sin presa: Hunt persiste hasta Rest/Gather.
+                }
             }
 
-            if (!_hunter.CanAttack)
+            // No se consulta el radio de vision para abandonar a una presa viva.
+            // Se sigue con su referencia original mientras siga viva.
+            _lastKnownPosition = target.transform.position;
+            Vector3 delta = target.transform.position - _hunter.transform.position;
+            delta.y = 0f;
+            float distance = delta.magnitude;
+
+            if (_hunter.CanAttack && distance <= _hunter.MeleeAttackRadius)
             {
-                _stateMachine.ChangeState(HunterStateType.Chase);
-                return;
+                _hunter.MeleeAttack();  // 2 golpes
+                return;                 // Permanece en Hunt.
+            }
+            if (_hunter.CanAttack && distance <= _hunter.RangeAttackRadius)
+            {
+                _hunter.RangedAttack(); // 1 golpe
+                return;                 // Permanece en Hunt.
             }
 
-            float distance = Vector3.Distance(
-                _hunter.transform.position,
-                _hunter.Target.transform.position
-            );
-
-            // Si el boid esta retenido por una trampa, se prioriza el ataque melee.
-            bool trapped = _hunter.Target.TargetTrap != null &&
-                           _hunter.Target.TargetTrap.IsActive &&
-                           _hunter.Target.TargetTrap.IsOccupied;
-
-            if (distance <= _hunter.MeleeAttackRadius)
-            {
-                _hunter.MeleeAttack();
-
-                // La consigna exige abandonar Attack despues de atacar exitosamente.
-                _stateMachine.ChangeState(_hunter.Target.IsAlive
-                    ? HunterStateType.Chase : HunterStateType.Gather);
-                return;
-            }
-
-            if (!trapped && distance <= _hunter.RangeAttackRadius)
-            {
-                _hunter.RangedAttack();
-
-                // Se mantiene el mismo objetivo en Chase durante el cooldown.
-                _stateMachine.ChangeState(_hunter.Target.IsAlive
-                    ? HunterStateType.Chase : HunterStateType.Gather);
-                return;
-            }
-
-            Vector3 steering = Steering.Pursuit(_hunter, _hunter.Target, _hunter.MaxSpeed);
-            _hunter.SetSteering(steering);
-        }
-    }
-
-    private class ChaseState : State
-    {
-        private Hunter _hunter;
-        private StateMachine _stateMachine;
-
-        public ChaseState(Hunter hunter, StateMachine stateMachine)
-        {
-            _hunter = hunter;
-            _stateMachine = stateMachine;
+            _hunter.SetAction("Persiguiendo con Pursuit");
+            _hunter.SetSteering(Steering.Pursuit(_hunter, target, _hunter.MaxSpeed));
         }
 
-        public override void Enter()
+        private void MoveToLastKnownPosition()
         {
-            _hunter.SetAction("Persiguiendo la misma presa");
-        }
-
-        public override void Update()
-        {
-            if (_hunter.Target == null || _hunter.Target.IsRespawning)
-            {
-                _hunter.SetTarget(null);
-                _stateMachine.ChangeState(HunterStateType.Patrol);
-                return;
-            }
-
-            if (!_hunter.Target.IsAlive)
-            {
-                _stateMachine.ChangeState(HunterStateType.Gather);
-                return;
-            }
-
-            if (_hunter.Perception == null ||
-                !_hunter.Perception.InRange(_hunter.Target.transform.position))
-            {
-                _hunter.SetTarget(null);
-                _stateMachine.ChangeState(HunterStateType.Patrol);
-                return;
-            }
-
-            if (_hunter.CanAttack)
-            {
-                _stateMachine.ChangeState(HunterStateType.Attack);
-                return;
-            }
-
-            float distance = Vector3.Distance(
-                _hunter.transform.position,
-                _hunter.Target.transform.position
-            );
-
-            if (distance <= _hunter.MeleeAttackRadius * 0.75f)
+            Vector3 difference = _lastKnownPosition - _hunter.transform.position;
+            difference.y = 0f;
+            if (difference.sqrMagnitude <= _hunter.LastPositionReachDistance * _hunter.LastPositionReachDistance)
             {
                 _hunter.SetVelocity(Vector3.zero);
+                _hunter.SetAction("Hunt: esperando en ultima posicion conocida");
                 return;
             }
-
-            Vector3 steering = Steering.Pursuit(_hunter, _hunter.Target, _hunter.MaxSpeed);
-            _hunter.SetSteering(steering);
+            _hunter.SetAction("Hunt: hacia ultima posicion conocida");
+            Vector3 desired = difference.normalized * _hunter.MaxSpeed;
+            _hunter.SetSteering(desired - _hunter.Velocity);
         }
     }
 
@@ -274,9 +212,7 @@ public class HunterStateMachine
     {
         private Hunter _hunter;
         private StateMachine _stateMachine;
-
         private float _gatherTimer;
-        private float _gatherDuration = 2f;
 
         public GatherState(Hunter hunter, StateMachine stateMachine)
         {
@@ -287,55 +223,67 @@ public class HunterStateMachine
         public override void Enter()
         {
             _gatherTimer = 0f;
-            _hunter.SetAction("Yendo a recolectar");
+            _hunter.SetAction("Buscando cuerpo para recolectar");
         }
 
         public override void Update()
         {
-            // Solo se recolectan boids eliminados, nunca presas vivas.
-            if (_hunter.Target == null || _hunter.Target.IsAlive || _hunter.Target.IsRespawning)
+            Boid target = _hunter.Target;
+            if (target == null || !target.isActiveAndEnabled || target.IsAlive || target.IsRespawning || target.RespawnRequested)
             {
-                _hunter.SetTarget(null);
                 _stateMachine.ChangeState(HunterStateType.Patrol);
                 return;
             }
 
-            float distance = Vector3.Distance(
-                _hunter.transform.position,
-                _hunter.Target.transform.position
-            );
-
-            if (distance <= 1f)
+            Vector3 delta = target.transform.position - _hunter.transform.position;
+            delta.y = 0f;
+            float distance = delta.magnitude;
+            if (distance <= _hunter.GatherDistance)
             {
                 _hunter.SetVelocity(Vector3.zero);
                 _hunter.SetAction("Recolectando boid...");
-                _hunter.Target.ShowGatherFeedback();
+                target.ShowGatherFeedback();
                 _gatherTimer += Time.deltaTime;
 
-                if (_gatherTimer >= _gatherDuration)
+                if (_gatherTimer >= _hunter.GatherDuration)
                 {
-                    Trap trap = _hunter.Target.TargetTrap;
-
-                    _hunter.Target.StartRespawn();
-                    _hunter.RemoveTrap(trap);
-                    _hunter.ResetTrapTimer();
-                    _hunter.Target.ClearTargetTrap();
-                    _hunter.SetTarget(null);
+                    target.StartRespawn(); // Solicitud, transicion realizada por la FSM del Boid.
                     _stateMachine.ChangeState(HunterStateType.Patrol);
                 }
-
                 return;
             }
 
             _gatherTimer = 0f;
-            Vector3 steering = Steering.Arrive(
-                _hunter,
-                _hunter.Target.transform,
-                _hunter.MaxSpeed,
-                2f
-            );
+            _hunter.SetAction("Yendo al cuerpo con Seek");
+            _hunter.SetSteering(Steering.Seek(_hunter, target.transform, _hunter.MaxSpeed));
+        }
+    }
 
-            _hunter.SetSteering(steering);
+    private class RestState : State
+    {
+        private Hunter _hunter;
+        private StateMachine _stateMachine;
+
+        public RestState(Hunter hunter, StateMachine stateMachine)
+        {
+            _hunter = hunter;
+            _stateMachine = stateMachine;
+        }
+
+        public override void Enter()
+        {
+            _hunter.SetTarget(null);
+            _hunter.SetVelocity(Vector3.zero);
+            _hunter.SetAction("Descansando y recargando energia");
+        }
+
+        public override void Update()
+        {
+            // Durante Rest no se detecta, persigue, ataca ni recolecta.
+            _hunter.SetVelocity(Vector3.zero);
+            _hunter.RechargeEnergy();
+            if (_hunter.Energy >= _hunter.MaxEnergy)
+                _stateMachine.ChangeState(HunterStateType.Patrol);
         }
     }
 }
@@ -343,7 +291,7 @@ public class HunterStateMachine
 public enum HunterStateType
 {
     Patrol,
-    Attack,
+    Hunt,
     Gather,
-    Chase,
+    Rest
 }
