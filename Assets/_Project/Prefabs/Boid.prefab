@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 2396588037573321551}
   - component: {fileID: 2306312223282392629}
   - component: {fileID: 6607798294689502696}
-  - component: {fileID: 8031487692866733282}
+  - component: {fileID: 3429156492692938406}
   m_Layer: 0
   m_Name: Boid
   m_TagString: Untagged
@@ -128,10 +128,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c75bba6783364ad47861429c26e4918e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoidPerception
-  _perceptionRadius: 10
+  _perceptionRadius: 12
+  _visionRadius: 8
   _scanInterval: 0.2
   _maxColliders: 64
---- !u!114 &8031487692866733282
+  _detectionLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+--- !u!114 &3429156492692938406
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -140,17 +144,25 @@ MonoBehaviour:
   m_GameObject: {fileID: 525233348394069841}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2753c4ccc79b25d438b37497d1c0570c, type: 3}
+  m_Script: {fileID: 11500000, guid: 1fb24514c85b143498790159fb22092d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Boid
   _maxSpeed: 5
   _maxSteering: 10
   _separationRadius: 2
   _perception: {fileID: 6607798294689502696}
+  _evadeSpeed: 8
   _separationWeight: 9
   _alignmentWeight: 15
   _cohesionWeight: 5
-  _maxLife: 100
+  _evadeSeparationWeight: 0.3
   _respawnDelay: 3
   _trapDamage: 20
   _trapAttackInterval: 1
+  _collisionRadius: 0.45
+  _objectSlowingDistance: 3
+  _objectReachTolerance: 0.15
+  _respawnRetryInterval: 0.2
+  _damageFlashTime: 0.2
+  _clearanceScanRadius: 3
+  _showStateLabel: 1
