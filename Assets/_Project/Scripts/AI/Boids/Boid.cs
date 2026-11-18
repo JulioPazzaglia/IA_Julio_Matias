@@ -40,7 +40,6 @@ public class Boid : Agent
     [SerializeField, Min(0f)]
     private float _evadeSeparationWeight = 0.3f;
 
-    // Requisito del recuperatorio: dos impactos; ranged suma 1, melee suma 2.
     private const int MaxLife = 2;
     private int _life;
 
@@ -148,7 +147,6 @@ public class Boid : Agent
                 bool crossedXZ =
                     Mathf.Abs(wrappedPosition.x - newPosition.x) > 0.001f
                     || Mathf.Abs(wrappedPosition.z - newPosition.z) > 0.001f;
-                // La salida se registra incluso si vuelve al borde opuesto en el mismo frame.
                 if (!crossedXZ || IsClearPosition(wrappedPosition))
                 {
                     if (crossedXZ)
@@ -157,7 +155,6 @@ public class Boid : Agent
                 }
                 else
                 {
-                    // Evita reaparecer encima de otro agente al cruzar el borde.
                     newPosition = transform.position;
                     _velocity = Vector3.zero;
                 }
@@ -169,8 +166,6 @@ public class Boid : Agent
             transform.forward = _velocity;
     }
 
-    // Resolucion local de superposicion en XZ. Usa SOLAMENTE vecinos del sensor.
-    // CollisionRadius y Trap.CollisionRadius deben representar el tamano de los modelos.
     private Vector3 PreventOverlaps(Vector3 position)
     {
         if (_perception == null)
@@ -212,7 +207,6 @@ public class Boid : Agent
     {
         Vector3 difference = position - obstacle;
         difference.y = 0f;
-        // Evita atravesar un circulo entre dos frames, incluso si el punto final queda libre.
         Vector3 start = transform.position - obstacle;
         start.y = 0f;
         Vector3 step = position - transform.position;
@@ -343,7 +337,6 @@ public class Boid : Agent
             Separation() * _separationWeight
             + Alignment() * _alignmentWeight
             + Cohesion() * _cohesionWeight;
-        // Un boid aislado no debe quedar inmovil al salir de Consume.
         if (steering.sqrMagnitude < 0.0001f && _velocity.sqrMagnitude < 0.0001f)
             steering = transform.forward * _maxSpeed;
         return steering;
@@ -354,7 +347,6 @@ public class Boid : Agent
         return Separation() * _evadeSeparationWeight;
     }
 
-    // Compatibilidad con el metodo original: un uso equivale a un golpe.
     public void TakeDamage(float damage)
     {
         if (damage > 0f)
@@ -372,7 +364,6 @@ public class Boid : Agent
         {
             _velocity = Vector3.zero;
             SetStateColor(Color.gray);
-            // La FSM detecta la muerte y realiza la transicion a Dead en su Update.
             Debug.Log($"{name}: muerto (2 golpes acumulados)");
         }
         else
@@ -442,7 +433,6 @@ public class Boid : Agent
         _leftBoundsSinceTargeted = false;
     }
 
-    // Hunter solo solicita el respawn. Es la FSM del Boid la que cambia de estado.
     public void StartRespawn()
     {
         if (!IsAlive && !_isRespawning)
@@ -499,7 +489,6 @@ public class Boid : Agent
         return true;
     }
 
-    // Solo se consulta Physics al reaparecer; no se busca globalmente en Update.
     private bool FindSafeRespawnPosition(out Vector3 position)
     {
         position = transform.position;
@@ -514,7 +503,7 @@ public class Boid : Agent
                 return true;
             }
         }
-        return false; // Respawn reintenta, nunca elige una posicion ocupada a proposito.
+        return false;
     }
 
     private bool IsClearPosition(Vector3 candidate)

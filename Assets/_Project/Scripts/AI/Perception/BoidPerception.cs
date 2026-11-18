@@ -3,9 +3,8 @@ using UnityEngine;
 
 public class BoidPerception : MonoBehaviour
 {
-    // Se conserva el campo original para no perder su valor en los prefabs.
-    [SerializeField, Min(0.1f)] private float _perceptionRadius = 5f; // Alignment / Cohesion
-    [SerializeField, Min(0.1f)] private float _visionRadius = 6f;     // Cazador / objetos
+    [SerializeField, Min(0.1f)] private float _perceptionRadius = 5f; 
+    [SerializeField, Min(0.1f)] private float _visionRadius = 6f;    
     [SerializeField, Min(0.05f)] private float _scanInterval = 0.1f;
     [SerializeField, Min(8)] private int _maxColliders = 128;
     [SerializeField] private LayerMask _detectionLayers = ~0;
@@ -31,7 +30,6 @@ public class BoidPerception : MonoBehaviour
     {
         float interval = Mathf.Max(0.05f, _scanInterval);
         Scan();
-        // Una consulta no alloc cada intervalo, NO por cada Update ni por cada fuerza de flocking.
         InvokeRepeating(nameof(Scan), Random.Range(0.01f, interval), interval);
     }
 
@@ -55,7 +53,6 @@ public class BoidPerception : MonoBehaviour
         float radius = Mathf.Max(_perceptionRadius, _visionRadius);
         int count = Physics.OverlapSphereNonAlloc(transform.position, radius, _colliders,
             _detectionLayers, QueryTriggerInteraction.Collide);
-        // Si el buffer se llena, crece solo en esa ocasion (no se reserva cada frame).
         while (count == _colliders.Length && _colliders.Length < 4096)
         {
             _colliders = new Collider[_colliders.Length * 2];
@@ -118,7 +115,7 @@ public class BoidPerception : MonoBehaviour
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(transform.position, _perceptionRadius); // Alignment/Cohesion
+        Gizmos.DrawWireSphere(transform.position, _perceptionRadius);
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(transform.position, _visionRadius);
     }

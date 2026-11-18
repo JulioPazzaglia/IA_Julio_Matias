@@ -45,7 +45,7 @@ public class GatherState : State
 
             if (_gatherTimer >= _hunter.GatherDuration)
             {
-                target.StartRespawn(); // Solicitud, transicion realizada por la FSM del Boid.
+                target.StartRespawn();
                 _stateMachine.ChangeState(HunterStateType.Patrol);
             }
             return;

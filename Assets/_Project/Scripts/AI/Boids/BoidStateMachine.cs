@@ -46,8 +46,6 @@ public class BoidStateMachine
 
     public void Update()
     {
-        // Prioridades del recuperatorio: Dead > Evade > Consume > Seek Object > Flocking.
-        // Las transiciones se evalúan en la propia FSM.
         if (
             !_boid.IsAlive
             && !_boid.IsRespawning

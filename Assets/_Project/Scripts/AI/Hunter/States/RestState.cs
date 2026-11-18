@@ -20,7 +20,6 @@ public class RestState : State
 
     public override void Update()
     {
-        // Durante Rest no se detecta, persigue, ataca ni recolecta.
         _hunter.SetVelocity(Vector3.zero);
         _hunter.RechargeEnergy();
         if (_hunter.Energy >= _hunter.MaxEnergy)

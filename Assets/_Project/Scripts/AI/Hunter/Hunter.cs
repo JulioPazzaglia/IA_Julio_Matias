@@ -4,8 +4,6 @@ public class Hunter : Agent
 {
     [SerializeField, Min(0.1f)] private float _maxSpeed = 3f;
     [SerializeField, Min(0.1f)] private float _maxSteering = 3f;
-
-    // Se conservan las referencias originales a los cuatro waypoints.
     [SerializeField] private Transform _waypointA;
     [SerializeField] private Transform _waypointB;
     [SerializeField] private Transform _waypointC;
@@ -22,7 +20,7 @@ public class Hunter : Agent
     [SerializeField, Min(1f)] private float _maxEnergy = 20f;
     [SerializeField, Min(0.01f)] private float _energyConsumptionRate = 1f;
     [SerializeField, Min(0.01f)] private float _energyRechargeRate = 4f;
-    [SerializeField] private float _energy; // visible en Inspector durante Play
+    [SerializeField] private float _energy; 
 
     [Header("Patrulla y recoleccion")]
     [SerializeField, Min(0.1f)] private float _waypointReachDistance = 1f;
@@ -86,11 +84,8 @@ public class Hunter : Agent
 
     private void Update()
     {
-        // TBA avanza en todos los estados, incluso Gather y Rest.
         _tbaTimer += Time.deltaTime;
         _stateMachine.Update();
-
-        // El disparo pausa el desplazamiento, NO la actualizacion de la FSM ni el gasto de energia.
         if (_attackStopTimer > 0f)
         {
             _attackStopTimer -= Time.deltaTime;
@@ -145,7 +140,7 @@ public class Hunter : Agent
         if (_target == null || !_target.IsAlive || !CanAttack)
             return;
         _velocity = Vector3.zero;
-        _target.TakeHits(2); // Melee = 2 golpes; mata al instante.
+        _target.TakeHits(2); 
         ResetTBA();
         _currentAction = "Ataque cuerpo a cuerpo (2 golpes)";
         _lastAttack = "Melee: " + _target.name;
@@ -157,7 +152,7 @@ public class Hunter : Agent
         if (_target == null || !_target.IsAlive || !CanAttack)
             return;
         _velocity = Vector3.zero;
-        _target.TakeHits(1); // Ranged = 1 golpe.
+        _target.TakeHits(1); 
         ResetTBA();
         _attackStopTimer = _attackStopTime;
         _currentAction = "Ataque a distancia (1 golpe)";
@@ -174,14 +169,10 @@ public class Hunter : Agent
     {
         _velocity = velocity;
     }
-
-    // Solamente HuntState llama a este metodo.
     public void ConsumeEnergy()
     {
         _energy = Mathf.Max(0f, _energy - _energyConsumptionRate * Time.deltaTime);
     }
-
-    // Solamente RestState llama a este metodo.
     public void RechargeEnergy()
     {
         _energy = Mathf.Min(_maxEnergy, _energy + _energyRechargeRate * Time.deltaTime);
@@ -206,7 +197,6 @@ public class Hunter : Agent
     {
         if (_trapTimer > 0f || Trap.ActiveCount >= 5 || _trapPrefab == null)
             return;
-        // No crear un objeto sobre un boid ni sobre otro objeto; reintentar durante Patrol.
         if (!CanPlaceTrap())
         {
             _trapTimer = _trapRetryDelay;

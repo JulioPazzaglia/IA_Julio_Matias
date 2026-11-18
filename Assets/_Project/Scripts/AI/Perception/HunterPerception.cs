@@ -3,7 +3,6 @@ using UnityEngine;
 
 public class HunterPerception : MonoBehaviour
 {
-    // El nombre serializado original se conserva; en la consigna se llama VisionRadius.
     [SerializeField, Min(0.1f)] private float _perceptionRadius = 10f;
     [SerializeField, Min(0.05f)] private float _scanInterval = 0.1f;
     [SerializeField, Min(8)] private int _maxColliders = 128;
@@ -41,7 +40,6 @@ public class HunterPerception : MonoBehaviour
         _nearbyBoids.Clear();
         int count = Physics.OverlapSphereNonAlloc(transform.position, _perceptionRadius, _colliders,
             _detectionLayers, QueryTriggerInteraction.Collide);
-        // Si el buffer se llena, crece solo en esa ocasion (no se reserva cada frame).
         while (count == _colliders.Length && _colliders.Length < 4096)
         {
             _colliders = new Collider[_colliders.Length * 2];

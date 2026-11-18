@@ -26,8 +26,6 @@ public class PatrolState : State
     {
         _hunter.UpdateTrapTimer();
         _hunter.TryGenerateTrap();
-
-        // Orden EXIGIDO: primero Boid muerto, luego Boid vivo si TBA termino.
         if (_hunter.Perception != null)
         {
             Boid deadBoid = _hunter.Perception.DetectDeadBoid();

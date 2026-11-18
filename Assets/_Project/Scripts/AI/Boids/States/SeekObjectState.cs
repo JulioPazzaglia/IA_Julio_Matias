@@ -51,8 +51,6 @@ public class SeekObjectState : State
             }
             return;
         }
-
-        // Arrive; la barrera de distancia y PreventOverlaps impiden pisar el objeto.
         float speed =
             _boid.MaxSpeed * Mathf.Clamp01((distance - stopDistance) / _boid.ObjectSlowingDistance);
         Vector3 steering = Steering.Arrive(_boid, trap.transform, speed, stopDistance);
