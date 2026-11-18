@@ -391,6 +391,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 1048148660}
     m_Modifications:
     - target: {fileID: 5044677891196847172, guid: a32a5f320f586b844b17ed121ab059eb, type: 3}
+      propertyPath: _maxEnergy
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 5044677891196847172, guid: a32a5f320f586b844b17ed121ab059eb, type: 3}
       propertyPath: _waypointA
       value: 
       objectReference: {fileID: 395812374}

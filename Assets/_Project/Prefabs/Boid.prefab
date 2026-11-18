@@ -128,8 +128,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c75bba6783364ad47861429c26e4918e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoidPerception
-  _perceptionRadius: 10
-  _visionRadius: 6
+  _perceptionRadius: 12
+  _visionRadius: 8
   _scanInterval: 0.2
   _maxColliders: 64
   _detectionLayers:
@@ -151,6 +151,7 @@ MonoBehaviour:
   _maxSteering: 10
   _separationRadius: 2
   _perception: {fileID: 6607798294689502696}
+  _evadeSpeed: 8
   _separationWeight: 9
   _alignmentWeight: 15
   _cohesionWeight: 5

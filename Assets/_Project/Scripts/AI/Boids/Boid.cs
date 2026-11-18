@@ -10,33 +10,70 @@ public class Boid : Agent
     private Color _originalColor;
     private Collider[] _colliders;
 
-    [SerializeField, Min(0.1f)] private float _maxSpeed = 5f;
-    [SerializeField, Min(0.1f)] private float _maxSteering = 10f;
-    [SerializeField, Min(0.1f)] private float _separationRadius = 2f;
-    [SerializeField] private BoidPerception _perception;
+    [SerializeField, Min(0.1f)]
+    private float _maxSpeed = 5f;
+
+    [SerializeField, Min(0.1f)]
+    private float _maxSteering = 10f;
+
+    [SerializeField, Min(0.1f)]
+    private float _separationRadius = 2f;
+
+    [SerializeField]
+    private BoidPerception _perception;
+
+    [SerializeField, Min(0.1f)]
+    private float _evadeSpeed = 8f;
+
+    public float EvadeSpeed => _evadeSpeed;
 
     [Header("Flocking Weights")]
-    [SerializeField, Min(0f)] private float _separationWeight = 9f;
-    [SerializeField, Min(0f)] private float _alignmentWeight = 15f;
-    [SerializeField, Min(0f)] private float _cohesionWeight = 5f;
-    [SerializeField, Min(0f)] private float _evadeSeparationWeight = 0.3f;
+    [SerializeField, Min(0f)]
+    private float _separationWeight = 9f;
+
+    [SerializeField, Min(0f)]
+    private float _alignmentWeight = 15f;
+
+    [SerializeField, Min(0f)]
+    private float _cohesionWeight = 5f;
+
+    [SerializeField, Min(0f)]
+    private float _evadeSeparationWeight = 0.3f;
 
     // Requisito del recuperatorio: dos impactos; ranged suma 1, melee suma 2.
     private const int MaxLife = 2;
     private int _life;
 
-    [SerializeField, Min(0.1f)] private float _respawnDelay = 3f;
-    [SerializeField, Min(0.1f)] private float _trapDamage = 20f;
-    [SerializeField, Min(0.1f)] private float _trapAttackInterval = 1f;
+    [SerializeField, Min(0.1f)]
+    private float _respawnDelay = 3f;
+
+    [SerializeField, Min(0.1f)]
+    private float _trapDamage = 20f;
+
+    [SerializeField, Min(0.1f)]
+    private float _trapAttackInterval = 1f;
 
     [Header("Colisiones y feedback")]
-    [SerializeField, Min(0.1f)] private float _collisionRadius = 0.45f;
-    [SerializeField, Min(0.1f)] private float _objectSlowingDistance = 3f;
-    [SerializeField, Min(0.01f)] private float _objectReachTolerance = 0.15f;
-    [SerializeField, Min(0.05f)] private float _respawnRetryInterval = 0.2f;
-    [SerializeField, Min(0.01f)] private float _damageFlashTime = 0.2f;
-    [SerializeField, Min(0.1f)] private float _clearanceScanRadius = 3f;
-    [SerializeField] private bool _showStateLabel = true;
+    [SerializeField, Min(0.1f)]
+    private float _collisionRadius = 0.45f;
+
+    [SerializeField, Min(0.1f)]
+    private float _objectSlowingDistance = 3f;
+
+    [SerializeField, Min(0.01f)]
+    private float _objectReachTolerance = 0.15f;
+
+    [SerializeField, Min(0.05f)]
+    private float _respawnRetryInterval = 0.2f;
+
+    [SerializeField, Min(0.01f)]
+    private float _damageFlashTime = 0.2f;
+
+    [SerializeField, Min(0.1f)]
+    private float _clearanceScanRadius = 3f;
+
+    [SerializeField]
+    private bool _showStateLabel = true;
 
     private bool _isRespawning;
     private bool _respawnRequested;
@@ -51,9 +88,10 @@ public class Boid : Agent
     public int Life => _life;
     public float MaxSpeed => _maxSpeed;
     public float CollisionRadius => Mathf.Max(0.1f, _collisionRadius);
-    public float SeparationRadius => _perception != null
-        ? Mathf.Min(_separationRadius, Mathf.Max(0.01f, _perception.PerceptionRadius - 0.01f))
-        : _separationRadius;
+    public float SeparationRadius =>
+        _perception != null
+            ? Mathf.Min(_separationRadius, Mathf.Max(0.01f, _perception.PerceptionRadius - 0.01f))
+            : _separationRadius;
     public float ObjectSlowingDistance => _objectSlowingDistance;
     public float ObjectReachTolerance => _objectReachTolerance;
     public float RespawnRetryInterval => _respawnRetryInterval;
@@ -61,7 +99,8 @@ public class Boid : Agent
     public Trap TargetTrap => _targetTrap;
     public float TrapDamage => _trapDamage;
     public float TrapAttackInterval => _trapAttackInterval;
-    public string CurrentStateName => _stateMachine != null ? _stateMachine.CurrentStateName : "Inicializando";
+    public string CurrentStateName =>
+        _stateMachine != null ? _stateMachine.CurrentStateName : "Inicializando";
 
     private void Awake()
     {
@@ -106,12 +145,14 @@ public class Boid : Agent
             Vector3 wrappedPosition = Bounds.Instance.OutOfBounds(newPosition);
             if ((wrappedPosition - newPosition).sqrMagnitude > 0.0001f)
             {
-                bool crossedXZ = Mathf.Abs(wrappedPosition.x - newPosition.x) > 0.001f ||
-                                 Mathf.Abs(wrappedPosition.z - newPosition.z) > 0.001f;
+                bool crossedXZ =
+                    Mathf.Abs(wrappedPosition.x - newPosition.x) > 0.001f
+                    || Mathf.Abs(wrappedPosition.z - newPosition.z) > 0.001f;
                 // La salida se registra incluso si vuelve al borde opuesto en el mismo frame.
                 if (!crossedXZ || IsClearPosition(wrappedPosition))
                 {
-                    if (crossedXZ) _leftBoundsSinceTargeted = true;
+                    if (crossedXZ)
+                        _leftBoundsSinceTargeted = true;
                     newPosition = wrappedPosition;
                 }
                 else
@@ -139,18 +180,29 @@ public class Boid : Agent
         {
             foreach (Boid other in _perception.NearbyBoids)
             {
-                if (other == null || other == this || !other.isActiveAndEnabled || other.IsRespawning)
+                if (
+                    other == null
+                    || other == this
+                    || !other.isActiveAndEnabled
+                    || other.IsRespawning
+                )
                     continue;
-                position = AvoidObstacle(position, other.transform.position,
-                    CollisionRadius + other.CollisionRadius + 0.05f);
+                position = AvoidObstacle(
+                    position,
+                    other.transform.position,
+                    CollisionRadius + other.CollisionRadius + 0.05f
+                );
             }
 
             foreach (Trap trap in _perception.NearbyTraps)
             {
                 if (trap == null || !trap.isActiveAndEnabled || !trap.IsActive)
                     continue;
-                position = AvoidObstacle(position, trap.transform.position,
-                    CollisionRadius + trap.CollisionRadius + 0.05f);
+                position = AvoidObstacle(
+                    position,
+                    trap.transform.position,
+                    CollisionRadius + trap.CollisionRadius + 0.05f
+                );
             }
         }
         return position;
@@ -179,9 +231,12 @@ public class Boid : Agent
             }
         }
         float distance = difference.magnitude;
-        if (distance >= minDistance) return position;
-        Vector3 away = distance > 0.00001f ? difference / distance :
-            ((GetInstanceID() % 2 == 0) ? Vector3.right : Vector3.forward);
+        if (distance >= minDistance)
+            return position;
+        Vector3 away =
+            distance > 0.00001f
+                ? difference / distance
+                : ((GetInstanceID() % 2 == 0) ? Vector3.right : Vector3.forward);
         return position + away * (minDistance - distance);
     }
 
@@ -190,7 +245,8 @@ public class Boid : Agent
         steering.y = 0f;
         steering = Vector3.ClampMagnitude(steering, _maxSteering * Time.deltaTime);
         _velocity += steering;
-        _velocity = Vector3.ClampMagnitude(_velocity, _maxSpeed);
+        float speed = CurrentStateName == "Evade" ? _evadeSpeed : _maxSpeed;
+        _velocity = Vector3.ClampMagnitude(_velocity, speed);
     }
 
     private Vector3 Separation()
@@ -210,7 +266,10 @@ public class Boid : Agent
             if (difference.sqrMagnitude <= radius * radius)
             {
                 if (difference.sqrMagnitude < 0.0001f)
-                    difference = GetInstanceID() < agent.GetInstanceID() ? Vector3.right * 0.01f : Vector3.left * 0.01f;
+                    difference =
+                        GetInstanceID() < agent.GetInstanceID()
+                            ? Vector3.right * 0.01f
+                            : Vector3.left * 0.01f;
                 desired += difference.normalized / Mathf.Max(difference.magnitude, 0.01f);
                 count++;
             }
@@ -229,7 +288,13 @@ public class Boid : Agent
         int count = 0;
         foreach (Boid agent in _perception.NearbyBoids)
         {
-            if (agent == null || agent == this || !agent.isActiveAndEnabled || !agent.IsAlive || !_perception.InRange(agent.transform.position))
+            if (
+                agent == null
+                || agent == this
+                || !agent.isActiveAndEnabled
+                || !agent.IsAlive
+                || !_perception.InRange(agent.transform.position)
+            )
                 continue;
             desired += agent.Velocity;
             count++;
@@ -248,7 +313,13 @@ public class Boid : Agent
         int count = 0;
         foreach (Boid agent in _perception.NearbyBoids)
         {
-            if (agent == null || agent == this || !agent.isActiveAndEnabled || !agent.IsAlive || !_perception.InRange(agent.transform.position))
+            if (
+                agent == null
+                || agent == this
+                || !agent.isActiveAndEnabled
+                || !agent.IsAlive
+                || !_perception.InRange(agent.transform.position)
+            )
                 continue;
             center += agent.transform.position;
             count++;
@@ -268,9 +339,10 @@ public class Boid : Agent
 
     public Vector3 CalculateFlocking()
     {
-        Vector3 steering = Separation() * _separationWeight
-             + Alignment() * _alignmentWeight
-             + Cohesion() * _cohesionWeight;
+        Vector3 steering =
+            Separation() * _separationWeight
+            + Alignment() * _alignmentWeight
+            + Cohesion() * _cohesionWeight;
         // Un boid aislado no debe quedar inmovil al salir de Consume.
         if (steering.sqrMagnitude < 0.0001f && _velocity.sqrMagnitude < 0.0001f)
             steering = transform.forward * _maxSpeed;
@@ -331,10 +403,14 @@ public class Boid : Agent
     {
         if (!IsAlive)
             return;
-        if (CurrentStateName == "Evade") SetStateColor(Color.cyan);
-        else if (CurrentStateName == "Seek Object") SetStateColor(Color.yellow);
-        else if (CurrentStateName == "Consume") SetStateColor(Color.magenta);
-        else SetDefaultColor();
+        if (CurrentStateName == "Evade")
+            SetStateColor(Color.cyan);
+        else if (CurrentStateName == "Seek Object")
+            SetStateColor(Color.yellow);
+        else if (CurrentStateName == "Consume")
+            SetStateColor(Color.magenta);
+        else
+            SetDefaultColor();
     }
 
     public void SetVelocity(Vector3 velocity)
@@ -382,24 +458,28 @@ public class Boid : Agent
         CancelInvoke(nameof(ResetColor));
         for (int i = 0; i < _renderers.Length; i++)
         {
-            if (_renderers[i] == null) continue;
+            if (_renderers[i] == null)
+                continue;
             _rendererWasEnabled[i] = _renderers[i].enabled;
             _renderers[i].enabled = false;
         }
         for (int i = 0; i < _colliders.Length; i++)
         {
-            if (_colliders[i] == null) continue;
+            if (_colliders[i] == null)
+                continue;
             _colliderWasEnabled[i] = _colliders[i].enabled;
             _colliders[i].enabled = false;
         }
-        if (_perception != null) _perception.enabled = false;
+        if (_perception != null)
+            _perception.enabled = false;
         Debug.Log($"{name}: recolectado, esperando respawn");
     }
 
     public bool CompleteRespawn()
     {
         Vector3 position;
-        if (!FindSafeRespawnPosition(out position)) return false;
+        if (!FindSafeRespawnPosition(out position))
+            return false;
         transform.position = position;
         _life = MaxLife;
         _respawnRequested = false;
@@ -407,12 +487,15 @@ public class Boid : Agent
         Vector3 direction = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
         _velocity = direction.normalized * _maxSpeed;
         for (int i = 0; i < _renderers.Length; i++)
-            if (_renderers[i] != null) _renderers[i].enabled = _rendererWasEnabled[i];
+            if (_renderers[i] != null)
+                _renderers[i].enabled = _rendererWasEnabled[i];
         SetDefaultColor();
         for (int i = 0; i < _colliders.Length; i++)
-            if (_colliders[i] != null) _colliders[i].enabled = _colliderWasEnabled[i];
+            if (_colliders[i] != null)
+                _colliders[i].enabled = _colliderWasEnabled[i];
         _isRespawning = false;
-        if (_perception != null) _perception.enabled = true;
+        if (_perception != null)
+            _perception.enabled = true;
         return true;
     }
 
@@ -420,7 +503,8 @@ public class Boid : Agent
     private bool FindSafeRespawnPosition(out Vector3 position)
     {
         position = transform.position;
-        if (Bounds.Instance == null) return false;
+        if (Bounds.Instance == null)
+            return false;
         for (int attempt = 0; attempt < 25; attempt++)
         {
             Vector3 candidate = Bounds.Instance.RandomPosition();
@@ -435,20 +519,44 @@ public class Boid : Agent
 
     private bool IsClearPosition(Vector3 candidate)
     {
-        int count = Physics.OverlapSphereNonAlloc(candidate,
-            CollisionRadius + _clearanceScanRadius, _spawnResults, ~0, QueryTriggerInteraction.Collide);
-        if (count >= _spawnResults.Length) return false;
+        int count = Physics.OverlapSphereNonAlloc(
+            candidate,
+            CollisionRadius + _clearanceScanRadius,
+            _spawnResults,
+            ~0,
+            QueryTriggerInteraction.Collide
+        );
+        if (count >= _spawnResults.Length)
+            return false;
         for (int i = 0; i < count; i++)
         {
             Collider col = _spawnResults[i];
-            if (col == null) continue;
+            if (col == null)
+                continue;
             Boid other = col.GetComponentInParent<Boid>();
-            if (other != null && other != this && other.isActiveAndEnabled && !other.IsRespawning &&
-                TooClose(candidate, other.transform.position, CollisionRadius + other.CollisionRadius + 0.1f))
+            if (
+                other != null
+                && other != this
+                && other.isActiveAndEnabled
+                && !other.IsRespawning
+                && TooClose(
+                    candidate,
+                    other.transform.position,
+                    CollisionRadius + other.CollisionRadius + 0.1f
+                )
+            )
                 return false;
             Trap trap = col.GetComponentInParent<Trap>();
-            if (trap != null && trap.isActiveAndEnabled && trap.IsActive &&
-                TooClose(candidate, trap.transform.position, CollisionRadius + trap.CollisionRadius + 0.1f))
+            if (
+                trap != null
+                && trap.isActiveAndEnabled
+                && trap.IsActive
+                && TooClose(
+                    candidate,
+                    trap.transform.position,
+                    CollisionRadius + trap.CollisionRadius + 0.1f
+                )
+            )
                 return false;
         }
         return true;
@@ -470,8 +578,10 @@ public class Boid : Agent
         Vector3 point = Camera.main.WorldToScreenPoint(transform.position + Vector3.up * 1.3f);
         if (point.z <= 0f)
             return;
-        GUI.Label(new Rect(point.x - 70f, Screen.height - point.y, 160f, 22f),
-            CurrentStateName + " (" + _life + "/2)");
+        GUI.Label(
+            new Rect(point.x - 70f, Screen.height - point.y, 160f, 22f),
+            CurrentStateName + " (" + _life + "/2)"
+        );
     }
 
     private void OnDrawGizmosSelected()
